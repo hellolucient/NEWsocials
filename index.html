@@ -5,44 +5,67 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI & Wellness Post Generator</title>
     <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; padding: 20px; }
-        button { margin: 10px 0; }
-        #newsList, #selectedTopics, #generatedPosts { margin-top: 20px; }
+        body { font-family: Arial, sans-serif; line-height: 1.6; padding: 20px; max-width: 800px; margin: 0 auto; }
+        button { margin: 10px 0; padding: 5px 10px; cursor: pointer; }
+        #newsList, #platformSelection, #generatedPosts, #mediaContent { margin-top: 20px; }
+        .media-item { display: flex; align-items: center; margin-bottom: 10px; }
+        .media-item img, .media-item audio { margin-right: 10px; max-width: 100px; }
+        .platform-post { margin-bottom: 20px; background-color: #f0f0f0; padding: 10px; border-radius: 5px; }
+        #platformSelection label { margin-right: 10px; }
     </style>
 </head>
 <body>
     <h1>AI & Wellness Post Generator</h1>
     
     <input type="text" id="topic" value="AI & Wellness">
-    <button onclick="fetchNews()">Fetch News</button>
+    <button onclick="fetchContent()">Fetch Content</button>
     
     <div id="newsList"></div>
+    <div id="mediaContent"></div>
+    <div id="platformSelection" style="display:none;">
+        <h2>Select Platforms:</h2>
+        <label><input type="checkbox" name="platform" value="twitter"> Twitter</label>
+        <label><input type="checkbox" name="platform" value="facebook"> Facebook</label>
+        <label><input type="checkbox" name="platform" value="linkedin"> LinkedIn</label>
+        <label><input type="checkbox" name="platform" value="instagram"> Instagram</label>
+        <label><input type="checkbox" name="platform" value="tiktok"> TikTok</label>
+    </div>
     <button onclick="generatePosts()" style="display:none;" id="generateButton">Generate Posts</button>
     
-    <div id="selectedTopics"></div>
     <div id="generatedPosts"></div>
 
     <script>
-        const API_KEYS = {
-            news: 'your_newsapi_key',
-            openai: 'your_openai_api_key'
-        };
+        const API_URL = https://newsocials.vercel.app/; // Replace with your Vercel deployment URL
+        let newsArticles = [];
+        let mediaContent = { images: [], sounds: [] };
 
-        async function fetchNews() {
+        async function fetchContent() {
             const topic = document.getElementById('topic').value;
-            console.log('Fetching news for topic:', topic);
+            console.log('Fetching content for topic:', topic);
             try {
-                const response = await fetch(`https://newsapi.org/v2/everything?q=${topic}&apiKey=${API_KEYS.news}&pageSize=5`);
-                console.log('Response status:', response.status);
-                const data = await response.json();
-                console.log('Received data:', data);
-                if (data.status === 'error') {
-                    throw new Error(data.message);
-                }
-                displayNews(data.articles);
+                // Fetch news
+                const newsResponse = await fetch(`${API_URL}/api/news/top-headlines?q=${topic}`);
+                const newsData = await newsResponse.json();
+                newsArticles = newsData.articles.slice(0, 5); // Limit to 5 articles
+                displayNews(newsArticles);
+
+                // Fetch images from Pexels and Pixabay
+                const pexelsResponse = await fetch(`${API_URL}/api/pexels/search?query=${topic}`);
+                const pexelsData = await pexelsResponse.json();
+                const pixabayResponse = await fetch(`${API_URL}/api/pixabay/search?query=${topic}`);
+                const pixabayData = await pixabayResponse.json();
+
+                // Fetch sounds from Freesound
+                const freesoundResponse = await fetch(`${API_URL}/api/freesound/search?query=${topic}`);
+                const freesoundData = await freesoundResponse.json();
+
+                mediaContent.images = [...pexelsData.photos, ...pixabayData.hits];
+                mediaContent.sounds = freesoundData.results;
+
+                displayMedia(mediaContent);
             } catch (error) {
-                console.error('Error fetching news:', error);
-                alert('Error fetching news: ' + error.message);
+                console.error('Error fetching content:', error);
+                alert('Error fetching content: ' + error.message);
             }
         }
 
@@ -57,39 +80,89 @@
                     </div>
                 `;
             });
+            document.getElementById('platformSelection').style.display = 'block';
             document.getElementById('generateButton').style.display = 'block';
+        }
+
+        function displayMedia(content) {
+            const mediaContent = document.getElementById('mediaContent');
+            mediaContent.innerHTML = '<h2>Related Media:</h2>';
+
+            // Display images
+            content.images.slice(0, 5).forEach(image => {
+                const imgSrc = image.src ? image.src.small : image.previewURL;
+                const credit = image.photographer || image.user;
+                mediaContent.innerHTML += `
+                    <div class="media-item">
+                        <img src="${imgSrc}" alt="${credit}" width="100">
+                        <span>${credit}</span>
+                    </div>
+                `;
+            });
+
+            // Display sounds
+            content.sounds.slice(0, 3).forEach(sound => {
+                mediaContent.innerHTML += `
+                    <div class="media-item">
+                        <audio controls src="${sound.previews['preview-hq-mp3']}"></audio>
+                        <span>${sound.name}</span>
+                    </div>
+                `;
+            });
         }
 
         async function generatePosts() {
             const selectedArticles = Array.from(document.querySelectorAll('input[name="article"]:checked'))
+                .map(checkbox => newsArticles[checkbox.value]);
+            const selectedPlatforms = Array.from(document.querySelectorAll('input[name="platform"]:checked'))
                 .map(checkbox => checkbox.value);
             
             const generatedPosts = document.getElementById('generatedPosts');
             generatedPosts.innerHTML = '<h2>Generated Posts:</h2>';
 
-            for (const index of selectedArticles) {
-                const article = document.querySelector(`label[for="article${index}"]`).textContent;
-                try {
-                    const response = await fetch('https://api.openai.com/v1/completions', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${API_KEYS.openai}`
-                        },
-                        body: JSON.stringify({
-                            model: "text-davinci-003",
-                            prompt: `Create a social media post about the following news: ${article}`,
-                            max_tokens: 100
-                        })
-                    });
-                    const data = await response.json();
-                    generatedPosts.innerHTML += `<p>${data.choices[0].text}</p>`;
-                } catch (error) {
-                    console.error('Error generating post:', error);
+            for (const article of selectedArticles) {
+                for (const platform of selectedPlatforms) {
+                    const post = generatePostForPlatform(article, platform);
+                    generatedPosts.innerHTML += `
+                        <div class="platform-post">
+                            <h3>${platform.charAt(0).toUpperCase() + platform.slice(1)} Post:</h3>
+                            <p>${post}</p>
+                            <button onclick="copyToClipboard(this.previousElementSibling.textContent)">Copy</button>
+                        </div>
+                    `;
                 }
             }
+        }
+
+        function generatePostForPlatform(article, platform) {
+            const hashtags = '#AIWellness #HealthTech';
+            const shortUrl = article.url.replace(/^https?:\/\//, '');
+            const image = mediaContent.images[Math.floor(Math.random() * mediaContent.images.length)];
+            const imgText = image ? `[Image: ${image.src ? image.src.small : image.previewURL}]` : '';
+
+            switch(platform) {
+                case 'twitter':
+                    return `${article.title.substring(0, 100)}... ${hashtags}\n${imgText}\nRead more: ${shortUrl}`;
+                case 'facebook':
+                    return `${article.title}\n\n${article.description}\n\n${imgText}\n\nRead the full story: ${article.url}\n${hashtags}`;
+                case 'linkedin':
+                    return `I found this interesting article on AI & Wellness:\n\n${article.title}\n\n${article.description}\n\n${imgText}\n\nWhat are your thoughts on this?\n\nRead more: ${article.url}\n${hashtags}`;
+                case 'instagram':
+                    return `${article.title.substring(0, 100)}...\n\n${imgText}\n\nWant to know more? Check out the link in bio!\n${hashtags}`;
+                case 'tiktok':
+                    return `${article.title.substring(0, 100)}...\n\n${imgText}\n\nStay tuned for more tech health updates!\nFull story: ${shortUrl}\n${hashtags}`;
+                default:
+                    return `Check out this AI & Wellness news: ${article.title}\n\n${imgText}\n\nRead more: ${article.url}`;
+            }
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Copied to clipboard!');
+            }, (err) => {
+                console.error('Could not copy text: ', err);
+            });
         }
     </script>
 </body>
 </html>
-
