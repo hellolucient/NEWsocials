@@ -50,9 +50,14 @@
             try {
                 // Fetch news
                 console.log('Fetching news from:', `${API_URL}/api/news/top-headlines?q=${encodeURIComponent(topic)}`);
-                const newsResponse = await fetch(`${API_URL}/api/news/top-headlines?q=${encodeURIComponent(topic)}`);
+                const newsResponse = await fetch(`${API_URL}/api/news/top-headlines?q=${encodeURIComponent(topic)}`, {
+                    credentials: 'include'
+                });
                 console.log('News response status:', newsResponse.status);
                 console.log('News response headers:', Object.fromEntries(newsResponse.headers));
+                if (!newsResponse.ok) {
+                    throw new Error(`HTTP error! status: ${newsResponse.status}`);
+                }
                 const newsText = await newsResponse.text();
                 console.log('News response text:', newsText);
                 const newsData = JSON.parse(newsText);
@@ -61,13 +66,19 @@
                 displayNews(newsArticles);
 
                 // Fetch images from Pexels and Pixabay
-                const pexelsResponse = await fetch(`${API_URL}/api/pexels/search?query=${encodeURIComponent(topic)}`);
+                const pexelsResponse = await fetch(`${API_URL}/api/pexels/search?query=${encodeURIComponent(topic)}`, {
+                    credentials: 'include'
+                });
                 const pexelsData = await pexelsResponse.json();
-                const pixabayResponse = await fetch(`${API_URL}/api/pixabay/search?query=${encodeURIComponent(topic)}`);
+                const pixabayResponse = await fetch(`${API_URL}/api/pixabay/search?query=${encodeURIComponent(topic)}`, {
+                    credentials: 'include'
+                });
                 const pixabayData = await pixabayResponse.json();
 
                 // Fetch sounds from Freesound
-                const freesoundResponse = await fetch(`${API_URL}/api/freesound/search?query=${encodeURIComponent(topic)}`);
+                const freesoundResponse = await fetch(`${API_URL}/api/freesound/search?query=${encodeURIComponent(topic)}`, {
+                    credentials: 'include'
+                });
                 const freesoundData = await freesoundResponse.json();
 
                 mediaContent.images = [...(pexelsData.photos || []), ...(pixabayData.hits || [])];
@@ -193,7 +204,12 @@
 
         async function testAPI() {
             try {
-                const response = await fetch(`${API_URL}/api/test`);
+                const response = await fetch(`${API_URL}/api/test`, {
+                    credentials: 'include'
+                });
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
                 const data = await response.json();
                 console.log('Test API response:', data);
             } catch (error) {
@@ -201,10 +217,26 @@
             }
         }
 
+        async function testCORS() {
+            try {
+                const response = await fetch(`${API_URL}/api/cors-test`, {
+                    credentials: 'include'
+                });
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                console.log('CORS test response:', data);
+            } catch (error) {
+                console.error('Error testing CORS:', error);
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('fetchButton').addEventListener('click', fetchContent);
             document.getElementById('generateButton').addEventListener('click', generatePosts);
             testAPI();
+            testCORS();
         });
     </script>
 </body>
