@@ -37,7 +37,7 @@
     <div id="generatedPosts"></div>
 
     <script>
-        const API_URL = 'https://api-test-suite.vercel.app'; // Corrected API URL
+        const API_URL = 'https://api-test-suite.vercel.app'; // Make sure this matches your Vercel deployment URL
 
         let newsArticles = [];
         let mediaContent = { images: [], sounds: [] };
@@ -49,22 +49,25 @@
             console.log('Fetching content for topic:', topic);
             try {
                 // Fetch news
-                console.log('Fetching news from:', `${API_URL}/api/news/top-headlines?q=${topic}`);
-                const newsResponse = await fetch(`${API_URL}/api/news/top-headlines?q=${topic}`);
+                console.log('Fetching news from:', `${API_URL}/api/news/top-headlines?q=${encodeURIComponent(topic)}`);
+                const newsResponse = await fetch(`${API_URL}/api/news/top-headlines?q=${encodeURIComponent(topic)}`);
                 console.log('News response status:', newsResponse.status);
-                const newsData = await newsResponse.json();
+                console.log('News response headers:', Object.fromEntries(newsResponse.headers));
+                const newsText = await newsResponse.text();
+                console.log('News response text:', newsText);
+                const newsData = JSON.parse(newsText);
                 console.log('News data:', newsData);
                 newsArticles = newsData.articles ? newsData.articles.slice(0, 5) : []; // Limit to 5 articles
                 displayNews(newsArticles);
 
                 // Fetch images from Pexels and Pixabay
-                const pexelsResponse = await fetch(`${API_URL}/api/pexels/search?query=${topic}`);
+                const pexelsResponse = await fetch(`${API_URL}/api/pexels/search?query=${encodeURIComponent(topic)}`);
                 const pexelsData = await pexelsResponse.json();
-                const pixabayResponse = await fetch(`${API_URL}/api/pixabay/search?query=${topic}`);
+                const pixabayResponse = await fetch(`${API_URL}/api/pixabay/search?query=${encodeURIComponent(topic)}`);
                 const pixabayData = await pixabayResponse.json();
 
                 // Fetch sounds from Freesound
-                const freesoundResponse = await fetch(`${API_URL}/api/freesound/search?query=${topic}`);
+                const freesoundResponse = await fetch(`${API_URL}/api/freesound/search?query=${encodeURIComponent(topic)}`);
                 const freesoundData = await freesoundResponse.json();
 
                 mediaContent.images = [...(pexelsData.photos || []), ...(pixabayData.hits || [])];
@@ -188,9 +191,20 @@
             });
         }
 
+        async function testAPI() {
+            try {
+                const response = await fetch(`${API_URL}/api/test`);
+                const data = await response.json();
+                console.log('Test API response:', data);
+            } catch (error) {
+                console.error('Error testing API:', error);
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('fetchButton').addEventListener('click', fetchContent);
             document.getElementById('generateButton').addEventListener('click', generatePosts);
+            testAPI();
         });
     </script>
 </body>
