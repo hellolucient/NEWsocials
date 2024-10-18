@@ -18,7 +18,7 @@
     <h1>AI & Wellness Post Generator</h1>
     
     <input type="text" id="topic" value="AI & Wellness">
-    <button onclick="fetchContent()">Fetch Content</button>
+    <button id="fetchButton">Fetch Content</button>
     
     <div id="newsList"></div>
     <div id="mediaContent"></div>
@@ -30,7 +30,7 @@
         <label><input type="checkbox" name="platform" value="instagram"> Instagram</label>
         <label><input type="checkbox" name="platform" value="tiktok"> TikTok</label>
     </div>
-    <button onclick="generatePosts()" style="display:none;" id="generateButton">Generate Posts</button>
+    <button id="generateButton" style="display:none;">Generate Posts</button>
     
     <div id="generatedPosts"></div>
 
@@ -44,8 +44,11 @@
             console.log('Fetching content for topic:', topic);
             try {
                 // Fetch news
+                console.log('Fetching news from:', `${API_URL}/api/news/top-headlines?q=${topic}`);
                 const newsResponse = await fetch(`${API_URL}/api/news/top-headlines?q=${topic}`);
+                console.log('News response status:', newsResponse.status);
                 const newsData = await newsResponse.json();
+                console.log('News data:', newsData);
                 newsArticles = newsData.articles.slice(0, 5); // Limit to 5 articles
                 displayNews(newsArticles);
 
@@ -111,7 +114,7 @@
             });
         }
 
-        async function generatePosts() {
+        function generatePosts() {
             const selectedArticles = Array.from(document.querySelectorAll('input[name="article"]:checked'))
                 .map(checkbox => newsArticles[checkbox.value]);
             const selectedPlatforms = Array.from(document.querySelectorAll('input[name="platform"]:checked'))
@@ -163,6 +166,11 @@
                 console.error('Could not copy text: ', err);
             });
         }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('fetchButton').addEventListener('click', fetchContent);
+            document.getElementById('generateButton').addEventListener('click', generatePosts);
+        });
     </script>
 </body>
 </html>
