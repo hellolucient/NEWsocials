@@ -1,1 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI & Wellness Post Generator</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; padding: 20px; }
+        button { margin: 10px 0; }
+        #newsList, #selectedTopics, #generatedPosts { margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h1>AI & Wellness Post Generator</h1>
+    
+    <input type="text" id="topic" value="AI & Wellness">
+    <button onclick="fetchNews()">Fetch News</button>
+    
+    <div id="newsList"></div>
+    <button onclick="generatePosts()" style="display:none;" id="generateButton">Generate Posts</button>
+    
+    <div id="selectedTopics"></div>
+    <div id="generatedPosts"></div>
+
+    <script>
+        const API_KEYS = {
+            news: 'your_newsapi_key',
+            openai: 'your_openai_api_key'
+        };
+
+        async function fetchNews() {
+            const topic = document.getElementById('topic').value;
+            console.log('Fetching news for topic:', topic);
+            try {
+                const response = await fetch(`https://newsapi.org/v2/everything?q=${topic}&apiKey=${API_KEYS.news}&pageSize=5`);
+                console.log('Response status:', response.status);
+                const data = await response.json();
+                console.log('Received data:', data);
+                if (data.status === 'error') {
+                    throw new Error(data.message);
+                }
+                displayNews(data.articles);
+            } catch (error) {
+                console.error('Error fetching news:', error);
+                alert('Error fetching news: ' + error.message);
+            }
+        }
+
+        function displayNews(articles) {
+            const newsList = document.getElementById('newsList');
+            newsList.innerHTML = '<h2>Select news topics:</h2>';
+            articles.forEach((article, index) => {
+                newsList.innerHTML += `
+                    <div>
+                        <input type="checkbox" id="article${index}" name="article" value="${index}">
+                        <label for="article${index}">${article.title}</label>
+                    </div>
+                `;
+            });
+            document.getElementById('generateButton').style.display = 'block';
+        }
+
+        async function generatePosts() {
+            const selectedArticles = Array.from(document.querySelectorAll('input[name="article"]:checked'))
+                .map(checkbox => checkbox.value);
+            
+            const generatedPosts = document.getElementById('generatedPosts');
+            generatedPosts.innerHTML = '<h2>Generated Posts:</h2>';
+
+            for (const index of selectedArticles) {
+                const article = document.querySelector(`label[for="article${index}"]`).textContent;
+                try {
+                    const response = await fetch('https://api.openai.com/v1/completions', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${API_KEYS.openai}`
+                        },
+                        body: JSON.stringify({
+                            model: "text-davinci-003",
+                            prompt: `Create a social media post about the following news: ${article}`,
+                            max_tokens: 100
+                        })
+                    });
+                    const data = await response.json();
+                    generatedPosts.innerHTML += `<p>${data.choices[0].text}</p>`;
+                } catch (error) {
+                    console.error('Error generating post:', error);
+                }
+            }
+        }
+    </script>
+</body>
+</html>
 
