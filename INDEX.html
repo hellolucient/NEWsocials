@@ -1,1 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Wellness Post Generator</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+    <h1>AI & Wellness Post Generator</h1>
+    
+    <!-- Input for the topic -->
+    <input type="text" id="topic" placeholder="Enter a topic (e.g., AI in wellness)" />
+    
+    <!-- Button for generating posts -->
+    <button onclick="generatePost()">Generate Post</button>
+    
+    <!-- Button for fetching images -->
+    <button onclick="fetchImages()">Fetch Images</button>
+    
+    <!-- Button for fetching videos -->
+    <button onclick="fetchVideos()">Fetch Videos</button>
+    
+    <!-- Button for fetching audio -->
+    <button onclick="fetchAudio()">Fetch Audio</button>
+    
+    <!-- Button for fetching news -->
+    <button onclick="fetchNews()">Fetch News</button>
+    
+    <!-- Area to display the generated content -->
+    <h2>Generated Post:</h2>
+    <p id="post"></p>
+    
+    <h2>Images:</h2>
+    <div id="images"></div>
+    
+    <h2>Videos:</h2>
+    <div id="videos"></div>
+    
+    <h2>Audio:</h2>
+    <div id="audio"></div>
+    
+    <h2>News:</h2>
+    <div id="news"></div>
 
+    <script>
+        const openaiApiKey = 'your_openai_api_key';
+        const pexelsApiKey = 'your_pexels_api_key';
+        const pixabayApiKey = 'your_pixabay_api_key';
+        const freesoundApiKey = 'your_freesound_api_key';
+        const newsApiKey = 'your_newsapi_key';
+        const mediastackApiKey = 'your_mediastack_api_key';
+
+        // Function to generate social media post using OpenAI
+        async function generatePost() {
+            const topic = document.getElementById('topic').value;
+            const prompt = `Write a professional social media post about ${topic}.`;
+            
+            try {
+                const response = await axios.post('https://api.openai.com/v1/completions', {
+                    model: 'text-davinci-003',
+                    prompt: prompt,
+                    max_tokens: 100
+                }, {
+                    headers: {
+                        'Authorization': `Bearer ${openaiApiKey}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                document.getElementById('post').innerText = response.data.choices[0].text;
+            } catch (error) {
+                console.error('Error generating post:', error);
+            }
+        }
+        
+        // Function to fetch images from Pexels
+        async function fetchImages() {
+            const topic = document.getElementById('topic
+                                                
